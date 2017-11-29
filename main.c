@@ -244,6 +244,8 @@ object * ChangeColor(object * obj, int n){
 
 }
 
+
+
 /* funções para conversão matricial
    e preenchimento de objetos */
 int DrawLine(point * point1, point * point2, window * w, bufferdevice * bd, int color){
@@ -251,12 +253,13 @@ int DrawLine(point * point1, point * point2, window * w, bufferdevice * bd, int 
   int x2;
   int y1;
   int y2;
-  int dx, dy, p, p2, xy2, x, y, xf;
+  //int dx, dy, p, p2, xy2, x, y, xf, yf;
 
-  printf("wxmax: %f ", w->xmax);
-  printf("wxmin: %f ", w->xmin);
-  printf("wymax: %f ", w->ymax);
-  printf("wymin: %f ", w->ymin);
+  //printf("wxmax: %f ", w->xmax);
+  //printf("wxmin: %f ", w->xmin);
+  //printf("wymax: %f ", w->ymax);
+  //printf("wymin: %f ", w->ymin);
+
 
   printf("point1x: %f ", point1->x);
   printf("point1y: %f ", point1->y);
@@ -274,38 +277,25 @@ int DrawLine(point * point1, point * point2, window * w, bufferdevice * bd, int 
   free(p1_normalizado);
   free(p2_normalizado);
 
+
+  printf("\nVamos desenhar a linha %d, %d -- %d, %d",(int)p1_d->x, (int)p1_d->y, (int)p2_d->x, (int)p2_d->y);
   x1 = p1_d->x;
   x2 = p2_d->x;
   y1 = p1_d->y;
   y2 = p2_d->y;
 
-  dx = x2-x1; // absoluto?
-  dy = y2-y1;
-  p = 2 * dy - dx;
-  p2 = 2 * dy;
-  xy2 = 2 * (dy-dx);
-
-  if (x1>x2){
-    x = x2;
-    y = y2;
-    xf = x1;
-  } else {
-    x = x1;
-    y = y1;
-    xf = x2;
-  }
-  printf("drawline 5\n");
-  bd->buffer[bd->MaxY * y + x] = color; // colocando o ponto x,y pra ser desenhado mais tarde
-  printf("drawline 6\n");
-  while (x < xf){
-    x++;
-    if (p < 0)
-      p = p + p2;
-    else{
-      y++;
-      p = p + xy2;
-    }
-    bd->buffer[bd->MaxY * y + x] = color; // colocando o ponto x,y pra ser desenhado mais tarde
+  int dx = abs(x2-x1), sx = x1<x2 ? 1 : -1;
+  int dy = abs(y2-y1), sy = y1<y2 ? 1 : -1; 
+  int err = (dx>dy ? dx : -dy)/2, e2;
+ 
+  for(;;){
+    
+  printf("\nColocando no buffer o ponto %d, %d", x1, y1);
+  bd->buffer[bd->MaxY * y1 + x1] = color; // colocando o ponto x,y pra ser desenhado mais tarde
+    if (x1==x2 && y1==y2) break;
+    e2 = err;
+    if (e2 >-dx) { err -= dy; x1 += sx; }
+    if (e2 < dy) { err += dx; y1 += sy; }
   }
   return 0;
 }
@@ -320,7 +310,58 @@ int DrawObject(object * obj, window * w, bufferdevice * bd){
 
 }
 
-//int Fill(object *, window *, bufferdevice *, int);
+int GetYMin(object * obj){
+  int i, j;
+  int minAtual = (int) YWMax;
+
+  for (i=0; i < obj->numbers_of_points; i++){
+    if (obj->points[i].y < minAtual)
+      minAtual = (int) obj->points[i].y;
+  }
+
+  return minAtual;
+}
+
+
+int GetYMax(object * obj){
+  int i, maxAtual = 0;
+
+  
+  for (i=0; i < obj->numbers_of_points; i++){
+    if (obj->points[i].y > maxAtual)
+      maxAtual = (int) obj->points[i].y;
+  }
+  return maxAtual;
+}
+
+object * DevicePixelsObject (object * obj, window * w, bufferdevice * bd){
+  int i;
+  object * new_obj = CreateObject(obj->numbers_of_points);
+  for (i=0; i < obj->numbers_of_points; i++)
+    SetObject( Srn2Srd( Sru2Srn(&(obj->points[i]), w) , bd) , new_obj);
+
+  return new_obj;
+}
+
+int Fill(object * obj, window * w, bufferdevice * bd, int color){
+  int i, j, contador;
+  object * new_obj;
+  signed char pintar = -1;
+
+
+  ChangeColor(obj, color);
+  DrawObject(obj, w, bd);
+
+  new_obj = DevicePixelsObject(obj, w, bd);
+  
+  for (i= (GetYMin(new_obj) + 1); i < (GetYMax(new_obj) - 1) ; i++)
+    for (j=0; j < bd->MaxX; j++)
+      if (bd->buffer[i*bd->MaxY + j] == color)
+        pintar = -pintar;
+      else
+        if (pintar == 1) 
+          bd->buffer[i*bd->MaxY + j] = color;
+}
 
 /* operações com objetos no mundo */
 object * Rotate(object * obj, float tetha){
@@ -463,7 +504,7 @@ int main(int argc, char **argv){
   bufferdevice * meu_bd;
   window * w1;
   palette * palette1;
-  point * p1, * p2, * p3;
+  point * p1, * p2, * p3, * p4, * p5, * p6;
   object * o1;
  // printf("Hello World\n");
 
@@ -482,22 +523,29 @@ int main(int argc, char **argv){
   SetColor(1.0, 1.0, 1.0, palette1);
   printf("setando cor3\n");
 
-  o1 = CreateObject(3);
+  o1 = CreateObject(6);
 
-  p1 = SetPoint(2, 200, 2);
+  p1 = SetPoint(20, 20, 2);
   printf("atribui ponto1\n");
-  p2 = SetPoint(400, 100, 2);
+  p2 = SetPoint(60, 60, 2);
   printf("eeatribuindo ponto2\n");
-  p3 = SetPoint(150, 10, 1);
+  p3 = SetPoint(100, 10, 2);
+  p4 = SetPoint(150, 150, 2);
+  p5 = SetPoint(20, 100, 2);
+  p6 = SetPoint(20, 21, 2);
 
   SetObject(p1, o1);
   SetObject(p2, o1);
   SetObject(p3, o1);
+  SetObject(p4, o1);
+  SetObject(p5, o1);
+  SetObject(p6, o1);
 
   //DrawLine(p1, p2, w1, meu_bd, 1);
   //DrawLine(p2, p3, w1, meu_bd, 2);
 
   DrawObject(o1, w1, meu_bd);
+  Fill(o1, w1, meu_bd, 2);
   //printf("Chamando drawLine\n");
 
   Dump2X(meu_bd, palette1);
