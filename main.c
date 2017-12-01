@@ -400,20 +400,20 @@ object * Rotate(object * obj, float tetha){
     hp->y = obj->points[i].y;
     hp->w = 1;
 
-    printf("\n(i = %d)\n",i );
-    printf("\na11: %f",rot_matrix->a11);
-    printf("\na12: %f",rot_matrix->a12);
-    printf("\na13: %f",rot_matrix->a13);
+    //printf("\n(i = %d)\n",i );
+    //printf("\na11: %f",rot_matrix->a11);
+    //printf("\na12: %f",rot_matrix->a12);
+    //printf("\na13: %f",rot_matrix->a13);
 
-    printf("\na21: %f",rot_matrix->a21);
-    printf("\na22: %f",rot_matrix->a22);
-    printf("\na23: %f",rot_matrix->a23);
+    //printf("\na21: %f",rot_matrix->a21);
+    //printf("\na22: %f",rot_matrix->a22);
+    //printf("\na23: %f",rot_matrix->a23);
 
-    printf("\na31: %f",rot_matrix->a31);
-    printf("\na32: %f",rot_matrix->a32);
-    printf("\na33: %f",rot_matrix->a33);
+    //printf("\na31: %f",rot_matrix->a31);
+    //printf("\na32: %f",rot_matrix->a32);
+    //printf("\na33: %f",rot_matrix->a33);
     rot_hpoint = LinearTransf(rot_matrix, hp);
-    printf("\n(eita noizzz)\n");
+    //printf("\n(eita noizzz)\n");
     rot_point->x = rot_hpoint->x;
     rot_point->y = rot_hpoint->y;
     SetObject(rot_point, new_obj);
@@ -424,14 +424,30 @@ object * Rotate(object * obj, float tetha){
 //object * Translate(object *, float, float);
 
 object * Scale(object * obj, float a, float b){
-  int i;
+  hpoint * hp;
   object * new_obj;
-  point * p;
-  new_obj = CreateObject(obj->numbers_of_points);
-  for (i=0; i < obj->numbers_of_points; i++){
-    p->x = obj->points[i].x * a;
-    p->y = obj->points[i].y * b;
-    SetObject(p, new_obj);
+  int n, i;
+  hmatrix * scl_matrix;
+  hpoint * scl_hpoint;
+  point * scl_point;
+
+  scl_point = (point *) malloc(sizeof (point));
+  hp = (hpoint *) malloc(sizeof (hpoint));
+  
+  n = obj->numbers_of_points;
+  new_obj = CreateObject(n);
+
+  scl_matrix = SetSclMatrix(a, b);
+  for (i=0; i<n; i++){
+    hp->x = obj->points[i].x;
+    hp->y = obj->points[i].y;
+    hp->w = 1;
+
+    scl_hpoint = LinearTransf(scl_matrix, hp);
+
+    scl_point->x = scl_hpoint->x;
+    scl_point->y = scl_hpoint->y;
+    SetObject(scl_point, new_obj);
   }
   return new_obj;
 }
