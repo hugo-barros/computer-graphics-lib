@@ -421,7 +421,34 @@ object * Rotate(object * obj, float tetha){
   return new_obj;
 }
 
-//object * Translate(object *, float, float);
+object * Translate(object * obj, float a, float b){
+  hpoint * hp;
+  object * new_obj;
+  int n, i;
+  hmatrix * sft_matrix;
+  hpoint * sft_hpoint;
+  point * sft_point;
+
+  sft_point = (point *) malloc(sizeof (point));
+  hp = (hpoint *) malloc(sizeof (hpoint));
+  
+  n = obj->numbers_of_points;
+  new_obj = CreateObject(n);
+
+  sft_matrix = SetSftMatrix(a, b);
+  for (i=0; i<n; i++){
+    hp->x = obj->points[i].x;
+    hp->y = obj->points[i].y;
+    hp->w = 1;
+
+    sft_hpoint = LinearTransf(sft_matrix, hp);
+
+    sft_point->x = sft_hpoint->x;
+    sft_point->y = sft_hpoint->y;
+    SetObject(sft_point, new_obj);
+  }
+  return new_obj;
+}
 
 object * Scale(object * obj, float a, float b){
   hpoint * hp;
@@ -464,7 +491,25 @@ hpoint * LinearTransf(hmatrix * hm, hpoint * hp){
   return new_hp;
 }
 
-//hmatrix * ComposeMatrix(hmatrix *, hmatrix *);
+hmatrix * ComposeMatrix(hmatrix * m1, hmatrix * m2){
+  hmatrix * new_m;
+  new_m = (hmatrix *) malloc(9 * sizeof(float));
+
+  new_m->a11 = m1->a11 * m2->a11 + m1->a12 * m2->a21 + m1->a13 * m2->a31;
+  new_m->a12 = m1->a11 * m2->a12 + m1->a12 * m2->a22 + m1->a13 * m2->a32;
+  new_m->a13 = m1->a11 * m2->a13 + m1->a12 * m2->a23 + m1->a13 * m2->a33;
+
+  new_m->a21 = m1->a21 * m2->a11 + m1->a22 * m2->a21 + m1->a23 * m2->a31;
+  new_m->a22 = m1->a21 * m2->a12 + m1->a22 * m2->a22 + m1->a23 * m2->a32;
+  new_m->a23 = m1->a21 * m2->a13 + m1->a22 * m2->a23 + m1->a23 * m2->a33;
+
+  new_m->a31 = m1->a31 * m2->a11 + m1->a32 * m2->a21 + m1->a33 * m2->a31;
+  new_m->a32 = m1->a31 * m2->a12 + m1->a32 * m2->a22 + m1->a33 * m2->a32;
+  new_m->a33 = m1->a31 * m2->a13 + m1->a32 * m2->a23 + m1->a33 * m2->a33;
+
+  return new_m;
+
+}
 
 hmatrix * SetRotMatrix(float tetha){
   hmatrix * new_m;
@@ -507,7 +552,24 @@ hmatrix * SetSclMatrix(float a, float b){
 
 }
 
-//hmatrix * SetSftMatrix(float, float);
+hmatrix * SetSftMatrix(float a, float b){
+  hmatrix * new_m;
+  new_m = (hmatrix *) malloc(9 * sizeof(float));
+
+  new_m->a11 = 1;
+  new_m->a12 = 0;
+  new_m->a13 = a;
+
+  new_m->a21 = 0;
+  new_m->a22 = 1;
+  new_m->a23 = b;
+
+  new_m->a31 = 0;
+  new_m->a32 = 0;
+  new_m->a33 = 1;
+
+  return new_m;
+}
 
 int Dump2X(bufferdevice * dev, palette * pal) {
   Display               * display;
@@ -579,7 +641,7 @@ int main(int argc, char **argv){
   window * w1;
   palette * palette1;
   point * p1, * p2, * p3, * p4, * p5, * p6;
-  object * o1, * o2, * o3;
+  object * o1, * o2, * o3, * o4;
  // printf("Hello World\n");
 
   SetWorld(0, 1024, 0, 1024);
@@ -621,9 +683,10 @@ int main(int argc, char **argv){
   printf("\n\ntadebrimks");
   o2 = Rotate(o1, 90*PI/180);
   o3 = Scale(o2, 0.2, 0.2);
-  ChangeColor(o2, 2);
+  o4 = Translate(o1, 50, 100);
+  ChangeColor(o4, 2);
   ChangeColor(o3, 1);
-  DrawObject(o3, w1, meu_bd);
+  DrawObject(o4, w1, meu_bd);
   //Fill(o1, w1, meu_bd, 2);
 
 
