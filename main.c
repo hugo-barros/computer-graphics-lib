@@ -311,7 +311,7 @@ int DrawObject(object * obj, window * w, bufferdevice * bd){
 }
 
 int GetYMin(object * obj){
-  int i, j;
+  int i;
   int minAtual = (int) YWMax;
 
   for (i=0; i < obj->numbers_of_points; i++){
@@ -343,8 +343,19 @@ object * DevicePixelsObject (object * obj, window * w, bufferdevice * bd){
   return new_obj;
 }
 
+char objetoTemPonto(object * obj, float x, float y){
+  int i;
+  for (i=0; i < obj->numbers_of_points; i++)
+    if ((obj->points[i].x == x) && (obj->points[i].y == y) ){
+      printf("\nretornei 1 no objetotemponto: x=%d ; y=%d",(int) x, (int) y );
+      return 1;
+    }
+  //printf("\nretornei 0 no objetotemponto: x=%d ; y=%d",(int) x, (int) y );
+  return 0;
+}
+
 int Fill(object * obj, window * w, bufferdevice * bd, int color){
-  int i, j, contador;
+  int i, j;
   object * new_obj;
   signed char pintar = -1;
 
@@ -354,13 +365,18 @@ int Fill(object * obj, window * w, bufferdevice * bd, int color){
 
   new_obj = DevicePixelsObject(obj, w, bd);
   
-  for (i= (GetYMin(new_obj) + 1); i < (GetYMax(new_obj) - 1) ; i++)
+  for (i= (GetYMin(new_obj) + 1); i < (GetYMax(new_obj) - 1) ; i++){
+    pintar = -1;
     for (j=0; j < bd->MaxX; j++)
-      if (bd->buffer[i*bd->MaxY + j] == color)
-        pintar = -pintar;
+      if (bd->buffer[i*bd->MaxY + j] == color){
+        if (!objetoTemPonto(new_obj, j, i))
+          pintar = -pintar;
+
+      }
       else
         if (pintar == 1) 
           bd->buffer[i*bd->MaxY + j] = color;
+  }
 }
 
 /* operações com objetos no mundo */
@@ -369,19 +385,38 @@ object * Rotate(object * obj, float tetha){
   object * new_obj;
   int n, i;
   hmatrix * rot_matrix;
+  hpoint * rot_hpoint;
+  point * rot_point;
 
+  rot_point = (point *) malloc(sizeof (point));
   hp = (hpoint *) malloc(sizeof (hpoint));
-  new_obj = (object *) malloc(sizeof (object));
+  
+  n = obj->numbers_of_points;
+  new_obj = CreateObject(n);
 
   rot_matrix = SetRotMatrix(tetha);
-  n = obj->numbers_of_points;
-
   for (i=0; i<n; i++){
-    //obj->points[i].x;
-    //obj->points[i].y;
-    // new_obj->
+    hp->x = obj->points[i].x;
+    hp->y = obj->points[i].y;
+    hp->w = 1;
 
-    // terminar isso, fazendo as multiplicações necessárias
+    printf("\n(i = %d)\n",i );
+    printf("\na11: %f",rot_matrix->a11);
+    printf("\na12: %f",rot_matrix->a12);
+    printf("\na13: %f",rot_matrix->a13);
+
+    printf("\na21: %f",rot_matrix->a21);
+    printf("\na22: %f",rot_matrix->a22);
+    printf("\na23: %f",rot_matrix->a23);
+
+    printf("\na31: %f",rot_matrix->a31);
+    printf("\na32: %f",rot_matrix->a32);
+    printf("\na33: %f",rot_matrix->a33);
+    rot_hpoint = LinearTransf(rot_matrix, hp);
+    printf("\n(eita noizzz)\n");
+    rot_point->x = rot_hpoint->x;
+    rot_point->y = rot_hpoint->y;
+    SetObject(rot_point, new_obj);
   }
   return new_obj;
 }
@@ -390,7 +425,17 @@ object * Rotate(object * obj, float tetha){
 
 //object * Scale(object *, float, float);
 
-//hpoint * LinearTransf(hmatrix *, hpoint *);
+hpoint * LinearTransf(hmatrix * hm, hpoint * hp){
+  printf("\nComecando linearTransf. Ponto entrada: x: %f ; y: %f ; w: %f", hp->x, hp->y, hp->w);
+  hpoint * new_hp;
+  new_hp = (hpoint *) malloc (sizeof(hpoint));
+  new_hp->x = hm->a11 * hp->x + hm->a12 * hp->y + hm->a13 * hp->w;
+  new_hp->y = hm->a21 * hp->x + hm->a22 * hp->y + hm->a23 * hp->w;
+  new_hp->w = hm->a31 * hp->x + hm->a32 * hp->y + hm->a33 * hp->w;
+
+  printf("\nTerminando linearTransf. Ponto saida: x: %f ; y: %f ; w: %f", new_hp->x, new_hp->y, new_hp->w);
+  return new_hp;
+}
 
 //hmatrix * ComposeMatrix(hmatrix *, hmatrix *);
 
@@ -398,17 +443,19 @@ hmatrix * SetRotMatrix(float tetha){
   hmatrix * new_m;
   new_m = (hmatrix *) malloc(9 * sizeof(float));
 
-  new_m->a11 = 1;
-  new_m->a12 = 0;
+  new_m->a11 = cos(tetha);
+  new_m->a12 = -sin(tetha);
   new_m->a13 = 0;
 
-  new_m->a21 = 0;
+  new_m->a21 = sin(tetha);
   new_m->a22 = cos(tetha);
-  new_m->a23 = -sin(tetha);
+  new_m->a23 = 0;
 
   new_m->a31 = 0;
-  new_m->a32 = sin(tetha);
-  new_m->a33 = cos(tetha);
+  new_m->a32 = 0;
+  new_m->a33 = 1;
+
+
 
   return new_m;
 }
@@ -505,7 +552,7 @@ int main(int argc, char **argv){
   window * w1;
   palette * palette1;
   point * p1, * p2, * p3, * p4, * p5, * p6;
-  object * o1;
+  object * o1, * o2;
  // printf("Hello World\n");
 
   SetWorld(0, 1024, 0, 1024);
@@ -544,9 +591,12 @@ int main(int argc, char **argv){
   //DrawLine(p1, p2, w1, meu_bd, 1);
   //DrawLine(p2, p3, w1, meu_bd, 2);
 
-  DrawObject(o1, w1, meu_bd);
-  Fill(o1, w1, meu_bd, 2);
-  //printf("Chamando drawLine\n");
+  printf("\n\ntadebrimks");
+  o2 = Rotate(o1, 90*PI/180);
+  ChangeColor(o2, 2);
+  DrawObject(o2, w1, meu_bd);
+  //Fill(o1, w1, meu_bd, 2);
+
 
   Dump2X(meu_bd, palette1);
   printf("Chamando dumpx\n");
