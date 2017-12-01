@@ -1,3 +1,5 @@
+#ifndef cg2d_h
+#define cg2d_h
 
 #include <math.h>
 #include <stdio.h>
@@ -128,3 +130,4 @@ hmatrix * SetSftMatrix(float, float);
 int Dump2X(bufferdevice *, palette *);
 
 
+#endif
