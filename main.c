@@ -423,7 +423,18 @@ object * Rotate(object * obj, float tetha){
 
 //object * Translate(object *, float, float);
 
-//object * Scale(object *, float, float);
+object * Scale(object * obj, float a, float b){
+  int i;
+  object * new_obj;
+  point * p;
+  new_obj = CreateObject(obj->numbers_of_points);
+  for (i=0; i < obj->numbers_of_points; i++){
+    p->x = obj->points[i].x * a;
+    p->y = obj->points[i].y * b;
+    SetObject(p, new_obj);
+  }
+  return new_obj;
+}
 
 hpoint * LinearTransf(hmatrix * hm, hpoint * hp){
   printf("\nComecando linearTransf. Ponto entrada: x: %f ; y: %f ; w: %f", hp->x, hp->y, hp->w);
@@ -552,7 +563,7 @@ int main(int argc, char **argv){
   window * w1;
   palette * palette1;
   point * p1, * p2, * p3, * p4, * p5, * p6;
-  object * o1, * o2;
+  object * o1, * o2, * o3;
  // printf("Hello World\n");
 
   SetWorld(0, 1024, 0, 1024);
@@ -593,8 +604,10 @@ int main(int argc, char **argv){
 
   printf("\n\ntadebrimks");
   o2 = Rotate(o1, 90*PI/180);
+  o3 = Scale(o2, 0.2, 0.2);
   ChangeColor(o2, 2);
-  DrawObject(o2, w1, meu_bd);
+  ChangeColor(o3, 1);
+  DrawObject(o3, w1, meu_bd);
   //Fill(o1, w1, meu_bd, 2);
 
 
